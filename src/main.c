@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "nordic_common.h"
@@ -24,64 +25,66 @@
 #include "ble_hci.h"
 #include "ble_advdata.h"
 #include "ble_advertising.h"
-
-//DFU OTA
 #include "ble_dfu.h"
 #include "dfu_app_handler.h"
 #include "nrf_delay.h"
+#include "resin_status_service.h"
+#include "SEGGER_RTT.h"
 
-#define IS_SRVC_CHANGED_CHARACT_PRESENT  1                                          /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
+#define RTT_PRINTF(...) \
+do { \
+     char str[64];\
+     sprintf(str, __VA_ARGS__);\
+     SEGGER_RTT_WriteString(0, str);\
+ } while(0)
 
-#define CENTRAL_LINK_COUNT               0                                          /**< Number of central links used by the application. When changing this number remember to adjust the RAM settings*/
-#define PERIPHERAL_LINK_COUNT            1                                          /**< Number of peripheral links used by the application. When changing this number remember to adjust the RAM settings*/
+#define IS_SRVC_CHANGED_CHARACT_PRESENT 1                                           /**< Include or not the service_changed characteristic. if not enabled, the server's database cannot be changed for the lifetime of the device*/
 
-#define DEVICE_NAME                      "resin_boilerplate"                        /**< Name of device. Will be included in the advertising data. */
-#define MANUFACTURER_NAME                "resin"                                    /**< Manufacturer. Will be passed to Device Information Service. */
-#define APP_ADV_INTERVAL                 300                                        /**< The advertising interval (in units of 0.625 ms. This value corresponds to 25 ms). */
-#define APP_ADV_TIMEOUT_IN_SECONDS       0                                          /**< The advertising timeout in units of seconds. */
+#define CENTRAL_LINK_COUNT              0                                           /**< Number of central links used by the application. When changing this number remember to adjust the RAM settings*/
+#define PERIPHERAL_LINK_COUNT           1                                           /**< Number of peripheral links used by the application. When changing this number remember to adjust the RAM settings*/
 
-#define APP_TIMER_PRESCALER              0                                          /**< Value of the RTC1 PRESCALER register. */
-#define APP_TIMER_OP_QUEUE_SIZE          4                                          /**< Size of timer operation queues. */
+#define DEVICE_NAME                     "resin"                                     /**< Name of device. Will be included in the advertising data. */
+#define APP_ADV_INTERVAL                300                                         /**< The advertising interval (in units of 0.625 ms. This value corresponds to 25 ms). */
+#define APP_ADV_TIMEOUT_IN_SECONDS      0                                           /**< The advertising timeout in units of seconds. */
 
-#define MIN_CONN_INTERVAL                MSEC_TO_UNITS(100, UNIT_1_25_MS)           /**< Minimum acceptable connection interval (0.1 seconds). */
-#define MAX_CONN_INTERVAL                MSEC_TO_UNITS(200, UNIT_1_25_MS)           /**< Maximum acceptable connection interval (0.2 second). */
-#define SLAVE_LATENCY                    0                                          /**< Slave latency. */
-#define CONN_SUP_TIMEOUT                 MSEC_TO_UNITS(4000, UNIT_10_MS)            /**< Connection supervisory timeout (4 seconds). */
+#define APP_TIMER_PRESCALER             0                                           /**< Value of the RTC1 PRESCALER register. */
+#define APP_TIMER_OP_QUEUE_SIZE         4                                           /**< Size of timer operation queues. */
 
-#define FIRST_CONN_PARAMS_UPDATE_DELAY   APP_TIMER_TICKS(5000, APP_TIMER_PRESCALER) /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
-#define NEXT_CONN_PARAMS_UPDATE_DELAY    APP_TIMER_TICKS(30000, APP_TIMER_PRESCALER)/**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
-#define MAX_CONN_PARAMS_UPDATE_COUNT     3                                          /**< Number of attempts before giving up the connection parameter negotiation. */
+#define MIN_CONN_INTERVAL               MSEC_TO_UNITS(7.5, UNIT_1_25_MS)            /**< Minimum acceptable connection interval (0.0075 seconds). */
+#define MAX_CONN_INTERVAL               MSEC_TO_UNITS(40, UNIT_1_25_MS)             /**< Maximum acceptable connection interval (0.04 second). */
+#define SLAVE_LATENCY                   0                                           /**< Slave latency. */
+#define CONN_SUP_TIMEOUT                MSEC_TO_UNITS(4000, UNIT_10_MS)             /**< Connection supervisory timeout (4 seconds). */
 
-#define SEC_PARAM_BOND                   1                                          /**< Perform bonding. */
-#define SEC_PARAM_MITM                   0                                          /**< Man In The Middle protection not required. */
-#define SEC_PARAM_LESC                   0                                          /**< LE Secure Connections not enabled. */
-#define SEC_PARAM_KEYPRESS               0                                          /**< Keypress notifications not enabled. */
-#define SEC_PARAM_IO_CAPABILITIES        BLE_GAP_IO_CAPS_NONE                       /**< No I/O capabilities. */
-#define SEC_PARAM_OOB                    0                                          /**< Out Of Band data not available. */
-#define SEC_PARAM_MIN_KEY_SIZE           7                                          /**< Minimum encryption key size. */
-#define SEC_PARAM_MAX_KEY_SIZE           16                                         /**< Maximum encryption key size. */
+#define FIRST_CONN_PARAMS_UPDATE_DELAY  APP_TIMER_TICKS(5000, APP_TIMER_PRESCALER)  /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
+#define NEXT_CONN_PARAMS_UPDATE_DELAY   APP_TIMER_TICKS(30000, APP_TIMER_PRESCALER) /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
+#define MAX_CONN_PARAMS_UPDATE_COUNT    3                                           /**< Number of attempts before giving up the connection parameter negotiation. */
 
-#define DEAD_BEEF                        0xDEADBEEF                                 /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
-#define DFU_REV_MAJOR                    0x00                                       /** DFU Major revision number to be exposed. */
-#define DFU_REV_MINOR                    0x01                                       /** DFU Minor revision number to be exposed. */
-#define DFU_REVISION                     ((DFU_REV_MAJOR << 8) | DFU_REV_MINOR)     /** DFU Revision number to be exposed. Combined of major and minor versions. */
-#define APP_SERVICE_HANDLE_START         0x000C                                     /**< Handle of first application specific service when when service changed characteristic is present. */
-#define BLE_HANDLE_MAX                   0xFFFF                                     /**< Max handle value in BLE. */
+#define SEC_PARAM_BOND                  1                                           /**< Perform bonding. */
+#define SEC_PARAM_MITM                  0                                           /**< Man In The Middle protection not required. */
+#define SEC_PARAM_LESC                  0                                           /**< LE Secure Connections not enabled. */
+#define SEC_PARAM_KEYPRESS              0                                           /**< Keypress notifications not enabled. */
+#define SEC_PARAM_IO_CAPABILITIES       BLE_GAP_IO_CAPS_NONE                        /**< No I/O capabilities. */
+#define SEC_PARAM_OOB                   0                                           /**< Out Of Band data not available. */
+#define SEC_PARAM_MIN_KEY_SIZE          7                                           /**< Minimum encryption key size. */
+#define SEC_PARAM_MAX_KEY_SIZE          16                                          /**< Maximum encryption key size. */
+
+#define DEAD_BEEF                       0xDEADBEEF                                  /**< Value used as error code on stack dump, can be used to identify stack location on stack unwind. */
+#define DFU_REV_MAJOR                   0x00                                        /** DFU Major revision number to be exposed. */
+#define DFU_REV_MINOR                   0x01                                        /** DFU Minor revision number to be exposed. */
+#define DFU_REVISION                    ((DFU_REV_MAJOR << 8) | DFU_REV_MINOR)      /** DFU Revision number to be exposed. Combined of major and minor versions. */
+#define APP_SERVICE_HANDLE_START        0x000C                                      /**< Handle of first application specific service when when service changed characteristic is present. */
+#define BLE_HANDLE_MAX                  0xFFFF                                      /**< Max handle value in BLE. */
 
 STATIC_ASSERT(IS_SRVC_CHANGED_CHARACT_PRESENT);                                     /** When having DFU Service support in application the Service Changed Characteristic should always be present. */
 
-static dm_application_instance_t         m_app_handle;                              /**< Application identifier allocated by device manager */
-static ble_dfu_t                         m_dfus;                                    /**< Structure used to identify the DFU service. */
-static uint16_t                          m_conn_handle = BLE_CONN_HANDLE_INVALID;   /**< Handle of the current connection. */
+static dm_application_instance_t        m_app_handle;                               /**< Application identifier allocated by device manager */
+static ble_dfu_t                        m_dfus;                                     /**< Structure used to identify the DFU service. */
+static uint16_t                         m_conn_handle = BLE_CONN_HANDLE_INVALID;    /**< Handle of the current connection. */
 
-/* YOUR_JOB: Declare all services structure your application is using
-static ble_xx_service_t                     m_xxs;
-static ble_yy_service_t                     m_yys;
-*/
+ble_os_t                                m_resin_status_service;                     /**< Resin status service structure */
 
 // YOUR_JOB: Use UUIDs for service(s) used in your application.
 static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE}}; /**< Universally unique service identifiers. */
-
 
 /**@brief Callback function for asserts in the SoftDevice.
  *
@@ -98,7 +101,6 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
 {
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
 }
-
 
 /**@brief Function for the Timer initialization.
  *
@@ -120,7 +122,6 @@ static void timers_init(void)
     err_code = app_timer_create(&m_app_timer_id, APP_TIMER_MODE_REPEATED, timer_timeout_handler);
     APP_ERROR_CHECK(err_code); */
 }
-
 
 /**@brief Function for the GAP initialization.
  *
@@ -155,32 +156,6 @@ static void gap_params_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
-
-/**@brief Function for handling the YYY Service events.
- * YOUR_JOB implement a service handler function depending on the event the service you are using can generate
- *
- * @details This function will be called for all YY Service events which are passed to
- *          the application.
- *
- * @param[in]   p_yy_service   YY Service structure.
- * @param[in]   p_evt          Event received from the YY Service.
- *
- *
-static void on_yys_evt(ble_yy_service_t     * p_yy_service,
-                       ble_yy_service_evt_t * p_evt)
-{
-    switch (p_evt->evt_type)
-    {
-        case BLE_YY_NAME_EVT_WRITE:
-            APPL_LOG("[APPL]: charact written with value %s. \r\n", p_evt->params.char_xx.value.p_str);
-            break;
-
-        default:
-            // No implementation needed.
-            break;
-    }
-}*/
-
 /**@brief Function for stopping advertising.
  */
 static void advertising_stop(void)
@@ -193,7 +168,6 @@ static void advertising_stop(void)
     err_code = bsp_indication_set(BSP_INDICATE_IDLE);
     APP_ERROR_CHECK(err_code);
 }
-
 
 /**@brief Function for loading application-specific context after establishing a secure connection.
  *
@@ -244,7 +218,6 @@ static void app_context_load(dm_handle_t const * p_handle)
     }
 }
 
-
 /** @snippet [DFU BLE Reset prepare] */
 /**@brief Function for preparing for system reset.
  *
@@ -280,30 +253,6 @@ static void reset_prepare(void)
  */
 static void services_init(void)
 {
-    /* YOUR_JOB: Add code to initialize the services used by the application.
-    uint32_t                           err_code;
-    ble_xxs_init_t                     xxs_init;
-    ble_yys_init_t                     yys_init;
-
-    // Initialize XXX Service.
-    memset(&xxs_init, 0, sizeof(xxs_init));
-
-    xxs_init.evt_handler                = NULL;
-    xxs_init.is_xxx_notify_supported    = true;
-    xxs_init.ble_xx_initial_value.level = 100;
-
-    err_code = ble_bas_init(&m_xxs, &xxs_init);
-    APP_ERROR_CHECK(err_code);
-
-    // Initialize YYY Service.
-    memset(&yys_init, 0, sizeof(yys_init));
-    yys_init.evt_handler                  = on_yys_evt;
-    yys_init.ble_yy_initial_value.counter = 0;
-
-    err_code = ble_yy_service_init(&yys_init, &yy_init);
-    APP_ERROR_CHECK(err_code);
-    */
-
     uint32_t         err_code;
     ble_dfu_init_t   dfus_init;
 
@@ -320,8 +269,10 @@ static void services_init(void)
 
     dfu_app_reset_prepare_set(reset_prepare);
     dfu_app_dm_appl_instance_set(m_app_handle);
-}
 
+    // Initialise the resin status service
+    resin_status_service_init(&m_resin_status_service);
+}
 
 /**@brief Function for handling the Connection Parameters Module.
  *
@@ -344,7 +295,6 @@ static void on_conn_params_evt(ble_conn_params_evt_t * p_evt)
     }
 }
 
-
 /**@brief Function for handling a Connection Parameters error.
  *
  * @param[in] nrf_error  Error code containing information about what went wrong.
@@ -353,7 +303,6 @@ static void conn_params_error_handler(uint32_t nrf_error)
 {
     APP_ERROR_HANDLER(nrf_error);
 }
-
 
 /**@brief Function for initializing the Connection Parameters module.
  */
@@ -377,7 +326,6 @@ static void conn_params_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
-
 /**@brief Function for starting timers.
 */
 static void application_timers_start(void)
@@ -388,7 +336,6 @@ static void application_timers_start(void)
     APP_ERROR_CHECK(err_code); */
 
 }
-
 
 /**@brief Function for putting the chip into sleep mode.
  *
@@ -407,7 +354,6 @@ static void sleep_mode_enter(void)
     err_code = sd_power_system_off();
     APP_ERROR_CHECK(err_code);
 }
-
 
 /**@brief Function for handling advertising events.
  *
@@ -432,7 +378,6 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
             break;
     }
 }
-
 
 /**@brief Function for handling the Application's BLE Stack events.
  *
@@ -460,7 +405,6 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
     }
 }
 
-
 /**@brief Function for dispatching a BLE stack event to all modules with a BLE stack event handler.
  *
  * @details This function is called from the BLE Stack event interrupt handler after a BLE stack
@@ -476,12 +420,8 @@ static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
     on_ble_evt(p_ble_evt);
     ble_advertising_on_ble_evt(p_ble_evt);
     ble_dfu_on_ble_evt(&m_dfus, p_ble_evt);
-    /*YOUR_JOB add calls to _on_ble_evt functions from each service your application is using
-    ble_xxs_on_ble_evt(&m_xxs, p_ble_evt);
-    ble_yys_on_ble_evt(&m_yys, p_ble_evt);
-    */
+    resin_status_service_on_ble_evt(&m_resin_status_service, p_ble_evt);
 }
-
 
 /**@brief Function for dispatching a system event to interested modules.
  *
@@ -495,7 +435,6 @@ static void sys_evt_dispatch(uint32_t sys_evt)
     pstorage_sys_event_handler(sys_evt);
     ble_advertising_on_sys_evt(sys_evt);
 }
-
 
 /**@brief Function for initializing the BLE stack.
  *
@@ -516,7 +455,7 @@ static void ble_stack_init(void)
                                                     &ble_enable_params);
     APP_ERROR_CHECK(err_code);
 
-    ble_enable_params.gatts_enable_params.service_changed = 1;
+    ble_enable_params.gatts_enable_params.service_changed = IS_SRVC_CHANGED_CHARACT_PRESENT;
 
     //Check the ram settings against the used number of links
     CHECK_RAM_START_ADDR(CENTRAL_LINK_COUNT,PERIPHERAL_LINK_COUNT);
@@ -533,7 +472,6 @@ static void ble_stack_init(void)
     err_code = softdevice_sys_evt_handler_set(sys_evt_dispatch);
     APP_ERROR_CHECK(err_code);
 }
-
 
 /**@brief Function for handling events from the BSP module.
  *
@@ -569,7 +507,6 @@ void bsp_event_handler(bsp_event_t event)
     }
 }
 
-
 /**@brief Function for handling the Device Manager events.
  *
  * @param[in] p_evt  Data associated to the device manager event.
@@ -587,7 +524,6 @@ static uint32_t device_manager_evt_handler(dm_handle_t const * p_handle,
 
     return NRF_SUCCESS;
 }
-
 
 /**@brief Function for the Device Manager initialization.
  *
@@ -624,7 +560,6 @@ static void device_manager_init(bool erase_bonds)
     APP_ERROR_CHECK(err_code);
 }
 
-
 /**@brief Function for initializing the Advertising functionality.
  */
 static void advertising_init(void)
@@ -636,7 +571,7 @@ static void advertising_init(void)
     memset(&advdata, 0, sizeof(advdata));
 
     advdata.name_type               = BLE_ADVDATA_FULL_NAME;
-    advdata.include_appearance      = true;
+    advdata.include_appearance      = false;
     advdata.flags                   = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
     advdata.uuids_complete.uuid_cnt = sizeof(m_adv_uuids) / sizeof(m_adv_uuids[0]);
     advdata.uuids_complete.p_uuids  = m_adv_uuids;
@@ -649,7 +584,6 @@ static void advertising_init(void)
     err_code = ble_advertising_init(&advdata, NULL, &options, on_adv_evt, NULL);
     APP_ERROR_CHECK(err_code);
 }
-
 
 /**@brief Function for initializing buttons and leds.
  *
@@ -669,7 +603,6 @@ static void buttons_leds_init(bool * p_erase_bonds)
 
     *p_erase_bonds = (startup_event == BSP_EVENT_CLEAR_BONDING_DATA);
 }
-
 
 /**@brief Function for the Power manager.
  */
@@ -692,8 +625,8 @@ int main(void)
     ble_stack_init();
     device_manager_init(erase_bonds);
     gap_params_init();
-    advertising_init();
     services_init();
+    advertising_init();
     conn_params_init();
 
     // Start execution.
@@ -707,7 +640,3 @@ int main(void)
         power_manage();
     }
 }
-
-/**
- * @}
- */

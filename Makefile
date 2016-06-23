@@ -60,13 +60,14 @@ $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/drivers_nrf/pstorage/pstorage.
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/examples/bsp/bsp.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/examples/bsp/bsp_btn_ble.c) \
 $(abspath src/main.c) \
+$(abspath src/resin_status_service.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/common/ble_advdata.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/ble_advertising/ble_advertising.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/common/ble_conn_params.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/common/ble_srv_common.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/device_manager/device_manager_peripheral.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/toolchain/system_nrf51.c) \
-$(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/softdevice/common/softdevice_handler/softdevice_handler.c) \
+$(abspath src/libs/softdevice_handler.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/libraries/bootloader_dfu/bootloader_util.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/libraries/bootloader_dfu/dfu_app_handler.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/ble_services/ble_dfu/ble_dfu.c) \
@@ -108,6 +109,8 @@ INC_PATHS += -I$(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/softdevice/comm
 INC_PATHS += -I$(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/device_manager/config)
 INC_PATHS += -I$(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/libraries/bootloader_dfu)
 INC_PATHS += -I$(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/ble_services/ble_dfu)
+INC_PATHS += -I$(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/ble_services/ble_dfu)
+INC_PATHS += -I$(abspath src/libs)
 
 OBJECT_DIRECTORY = _build
 LISTING_DIRECTORY = $(OBJECT_DIRECTORY)
@@ -118,6 +121,7 @@ BUILD_DIRECTORIES := $(sort $(OBJECT_DIRECTORY) $(OUTPUT_BINARY_DIRECTORY) $(LIS
 
 #flags common to all targets
 CFLAGS  = -DNRF_LOG_USES_UART=1
+#CFLAGS  = -DNRF_LOG_USES_RTT=1
 CFLAGS += -DBOARD_PCA10028
 CFLAGS += -DSOFTDEVICE_PRESENT
 CFLAGS += -DNRF51
