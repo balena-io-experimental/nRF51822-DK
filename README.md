@@ -1,2 +1,2 @@
-# nRF5-boilerplate
-Boilerplate nRF5 code that supports FOTA and resin interface
+# nRF51822
+edge-node-manager compatible firmware for the nRF51822 

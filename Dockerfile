@@ -30,18 +30,17 @@ RUN cd /opt && \
     pip install -r requirements.txt && \
     python setup.py install
 
+# Make the /assets directory
+RUN mkdir -p /assets
+
 # Set the working directory
 WORKDIR /usr/src/app
 
-# If the firmware is already compiled copy it to /assets
-# COPY application.zip /assets
-
-# If the firmware is not already compiled...
 # Copy all files to the working directory in the container
 COPY . ./
 
 # Compile the firmware
 RUN make
 
-# Move the firmware to /assets
-RUN mv application.zip /assets
+# Move the firmware to /assets/
+RUN mv application.zip /assets/
