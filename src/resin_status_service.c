@@ -88,46 +88,6 @@ static uint32_t add_restart_characteristic(ble_os_t * p_resin_status_service)
     return NRF_SUCCESS;
 }
 
-static uint32_t add_app_characteristic(ble_os_t * p_resin_status_service)
-{
-    uint32_t            err_code;
-    ble_uuid_t          char_uuid;
-    ble_uuid128_t       base_uuid = BLE_UUID_RESIN_STATUS_BASE_UUID;
-    char_uuid.uuid    = BLE_UUID_RESIN_APP_CHARACTERISTIC;
-    err_code = sd_ble_uuid_vs_add(&base_uuid, &char_uuid.type);
-    APP_ERROR_CHECK(err_code);
-
-    ble_gatts_char_md_t char_md;
-    memset(&char_md, 0, sizeof(char_md));
-    char_md.char_props.read = 1;
-    char_md.char_props.write = 0;
-
-    ble_gatts_attr_md_t attr_md;
-    memset(&attr_md, 0, sizeof(attr_md));
-    attr_md.vloc      = BLE_GATTS_VLOC_STACK;
-
-    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
-    //BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
-
-    ble_gatts_attr_t            attr_char_value;
-    memset(&attr_char_value, 0, sizeof(attr_char_value));
-    attr_char_value.p_uuid    = &char_uuid;
-    attr_char_value.p_attr_md = &attr_md;
-
-    attr_char_value.max_len     = 8;
-    attr_char_value.init_len    = 8;
-    uint8_t value[8]            = {'t', 'e', 's', 't', '_', 'a', 'p', 'p'};
-    attr_char_value.p_value     = value;
-
-    err_code = sd_ble_gatts_characteristic_add(p_resin_status_service->service_handle,
-                                      &char_md,
-                                      &attr_char_value,
-                                      &p_resin_status_service->char_handles);
-    APP_ERROR_CHECK(err_code);
-
-    return NRF_SUCCESS;
-}
-
 static void on_ble_write(ble_os_t * p_resin_status_service, ble_evt_t * p_ble_evt)
 {
     if(p_ble_evt->evt.gatts_evt.params.write.handle == 22)
@@ -167,6 +127,9 @@ static void timer_timeout_handler(void * p_context)
     {
         err_code = app_timer_stop(m_flash_timer_id);
         APP_ERROR_CHECK(err_code);
+
+        err_code = bsp_indication_set(BSP_INDICATE_ADVERTISING);
+        APP_ERROR_CHECK(err_code);
     }
 }
 
@@ -191,7 +154,6 @@ void resin_status_service_init(ble_os_t * p_resin_status_service)
 
     add_flash_characteristic(p_resin_status_service);
     add_restart_characteristic(p_resin_status_service);
-    add_app_characteristic(p_resin_status_service);
 }
 
 void resin_status_service_on_ble_evt(ble_os_t * p_resin_status_service, ble_evt_t * p_ble_evt)

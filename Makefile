@@ -1,7 +1,6 @@
 PROJECT_NAME := ble_boilerplate_s130_pca10028
 
 export OUTPUT_FILENAME
-#MAKEFILE_NAME := $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
 MAKEFILE_NAME := $(MAKEFILE_LIST)
 MAKEFILE_DIR := $(dir $(MAKEFILE_NAME) )
 
@@ -15,7 +14,6 @@ endif
 MK := mkdir
 RM := rm -rf
 
-#echo suspend
 ifeq ("$(VERBOSE)","1")
 NO_ECHO :=
 else
@@ -121,7 +119,6 @@ BUILD_DIRECTORIES := $(sort $(OBJECT_DIRECTORY) $(OUTPUT_BINARY_DIRECTORY) $(LIS
 
 #flags common to all targets
 CFLAGS  = -DNRF_LOG_USES_UART=1
-#CFLAGS  = -DNRF_LOG_USES_RTT=1
 CFLAGS += -DBOARD_PCA10028
 CFLAGS += -DSOFTDEVICE_PRESENT
 CFLAGS += -DNRF51
@@ -193,7 +190,6 @@ nrf51422_xxac_s130: $(BUILD_DIRECTORIES) $(OBJECTS)
 
 ## Create build directories
 $(BUILD_DIRECTORIES):
-	echo $(MAKEFILE_NAME)
 	$(MK) $@
 
 # Create objects from C SRC files
@@ -205,10 +201,12 @@ $(OBJECT_DIRECTORY)/%.o: %.c
 $(OBJECT_DIRECTORY)/%.o: %.s
 	@echo Assembly file: $(notdir $<)
 	$(NO_ECHO)$(CC) $(ASMFLAGS) $(INC_PATHS) -c -o $@ $<
+
 # Link
 $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out: $(BUILD_DIRECTORIES) $(OBJECTS)
 	@echo Linking target: $(OUTPUT_FILENAME).out
 	$(NO_ECHO)$(CC) $(LDFLAGS) $(OBJECTS) $(LIBS) -lm -o $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out
+
 ## Create binary .bin file from the .out file
 $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin: $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out
 	@echo Preparing: $(OUTPUT_FILENAME).bin
@@ -225,34 +223,20 @@ genbin:
 	@echo Preparing: $(OUTPUT_FILENAME).bin
 	$(NO_ECHO)$(OBJCOPY) -O binary $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).bin
 
-## Create binary .hex file from the .out file
 genhex:
 	@echo Preparing: $(OUTPUT_FILENAME).hex
 	$(NO_ECHO)$(OBJCOPY) -O ihex $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).hex
+
 echosize:
-	-@echo ''
+	@echo 'Size:'
 	$(NO_ECHO)$(SIZE) $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out
-	-@echo ''
+
 genzip:
 	@echo Generating application.zip
 	nrfutil dfu genpkg --application _build/nrf51422_xxac_s130.bin  application.zip
-clean:
-	@echo Removing build directory
-	rm -rf _build
 
 clean:
 	$(RM) $(BUILD_DIRECTORIES)
 
 cleanobj:
 	$(RM) $(BUILD_DIRECTORIES)/*.o
-
-flash: nrf51422_xxac_s130
-	@echo Flashing: $(OUTPUT_BINARY_DIRECTORY)/$<.hex
-	nrfjprog --program $(OUTPUT_BINARY_DIRECTORY)/$<.hex -f nrf51  --sectorerase
-	nrfjprog --reset -f nrf51
-
-## Flash softdevice
-flash_softdevice:
-	@echo Flashing: s130_nrf51_2.0.0_softdevice.hex
-	nrfjprog --program /opt/nRF5_SDK_11.0.0_89a8197/components/softdevice/s130/hex/s130_nrf51_2.0.0_softdevice.hex -f nrf51 --chiperase
-	nrfjprog --reset -f nrf51
