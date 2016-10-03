@@ -2,7 +2,7 @@
 edge-node-manager compatible firmware for the nRF51822
 
 ### Modify firmware to point to your application
- - Change line 46 `#define DEVICE_NAME "13693"` in `src/main.c` to point to your applicationUUID
+ - Change line 46 `#define DEVICE_NAME "13693"` in `src/main.c` to point to your dependant application UUID
 
 ### Prepare a fresh nRf51822
  - Ensure you have the dependancies listed in the `Dockerfile`

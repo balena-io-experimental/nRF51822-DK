@@ -44,3 +44,22 @@ RUN make
 
 # Move the firmware to /assets/
 RUN mv application.zip /assets/
+
+# Below we try to reduce the image size as much as possible to speed up the
+# development cycle
+
+# Remove packages
+RUN apt-get purge --auto-remove -yq \
+binutils-arm-none-eabi \
+gcc-arm-none-eabi \
+libnewlib-arm-none-eabi \
+unzip
+
+# Remove nRF5_SDK
+RUN cd /opt && rm -rf nRF5_SDK_11.0.0_89a8197
+
+# Remove pc-nrfutil
+RUN cd /opt && rm -rf pc-nrfutil
+
+# Remove everying from the working directory
+RUN rm -rf *
