@@ -351,7 +351,7 @@ class BleClient(object):
             #Status update
             if self.progressUpdate:
                 percent = (float(self.start) / self.size) * 100.0
-                print(self.deviceAddr, "%2.2f" % percent)
+                print("Percent complete: %2.2f" % percent)
 
             #Send image
             for i in range(self.start, self.size, self.packetSize):
@@ -368,7 +368,7 @@ class BleClient(object):
                     #Calculate percentage
                     status = parseNotification(notification[1:])
                     percent = (float(status) / self.size) * 100.0
-                    print(self.deviceAddr, "%2.2f" % percent)
+                    print("Percent complete: %2.2f" % percent)
 
                     #Check transfer is in sync
                     if (i + self.packetSize) != status:
@@ -378,7 +378,7 @@ class BleClient(object):
                     blockCount += 1
 
             if self.progressUpdate:
-                print(self.deviceAddr, "%2.2f" % 100.0)
+                print("Percent complete: %2.2f" % 100.0)
 
             #Check notification
             notification = self.waitForNotification()
