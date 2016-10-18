@@ -1,6 +1,6 @@
 # NUC python base-image
 # See more about resin base images here: http://docs.resin.io/runtime/resin-base-images/
-FROM resin/nuc-python
+FROM resin/nuc-python:2.7
 
 # Enable systemd init system
 ENV INITSYSTEM on
