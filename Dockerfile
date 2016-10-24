@@ -26,7 +26,7 @@ RUN cd /opt && \
 RUN cd /opt && \
     git clone https://github.com/NordicSemiconductor/pc-nrfutil.git && \
     cd pc-nrfutil && \
-    git checkout 0_5_1 && \
+    git checkout 0_5_2 && \
     pip install -r requirements.txt && \
     python setup.py install
 
