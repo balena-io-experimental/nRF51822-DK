@@ -2,15 +2,15 @@
 edge-node-manager compatible firmware for the nRF51822-DK
 
 ### Modify firmware
- - Change [line 46](https://github.com/resin-io-projects/nRF51822-DK/blob/master/src/main.c#L46) in `src/main.c` to point to your dependant application UUID
+ - Change [line 46](https://github.com/resin-io-projects/nRF51822-DK/blob/master/src/main.c#L46) in `src/main.c` to point to your dependent application UUID
 
 ### Prepare nRF51822-DK
- - Ensure you have the dependancies listed in the `Dockerfile`
+ - Ensure you have the dependencies listed in the `Dockerfile`
  - Connect the nRF51922-DK to your computer using the USB cable
  - Prepare the board `$ sudo ./scripts/prepare.sh`
 
 ### Compile firmware
- - Ensure you have the dependancies listed in the `Dockerfile`
+ - Ensure you have the dependencies listed in the `Dockerfile`
  - Compile the firmware `$ make`
 
 ### Flash firmware
@@ -25,15 +25,15 @@ edge-node-manager compatible firmware for the nRF51822-DK
 
 ### Getting started
  - Note: Take a look at the [edge-node-manager](https://github.com/resin-io/edge-node-manager) if you havn't already done so
- - Create a new dependant application called `nRF51822DK` from the `Dependant Applications` tab accessed from the side bar
+ - Create a new dependent application called `nRF51822DK` from the `Dependent Applications` tab accessed from the side bar
  - Add the dependent application `resin remote` to your local workspace using the useful shortcut in the dashboard UI, for example:
 ```
 $ git remote add resin gh_josephroberts@git.resinstaging.io:gh_josephroberts/nrf51822DK.git
 ```
- - Retrive the dependent application `UUID` from the Resin dashboard, for example: If your dependant application URL is
+ - Retrive the dependent application `UUID` from the Resin dashboard, for example: If your dependent application URL is
  `https://dashboard.resinstaging.io/apps/13829/devices` the `UUID` is `14495`
  - Set the dependent application `UUID` on [line 82](https://github.com/resin-io/edge-node-manager/blob/master/application/application.go#L82)
-  in `application/application.go` to point to your dependant application, for example: `initApplication(14495, board.NRF51822DK)`
+  in `application/application.go` to point to your dependent application, for example: `initApplication(14495, board.NRF51822DK)`
  - Make sure you add, commit and push the change to the edge-node-manager application
  - Add, commit and push the `nRF51822DK` application to your RPi3, for example:
 ```

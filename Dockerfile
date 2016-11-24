@@ -2,17 +2,19 @@
 # See more about resin base images here: http://docs.resin.io/runtime/resin-base-images/
 FROM resin/nuc-python:2.7
 
+# Set the maintainer
+MAINTAINER Joe Roberts <joe@resin.io>
+
 # Enable systemd init system
 ENV INITSYSTEM on
 
 # Use apt-get to install dependencies
-RUN apt-get update && apt-get install -yq \
+RUN apt-get update && apt-get install -yq --no-install-recommends \
     binutils-arm-none-eabi \
     gcc-arm-none-eabi \
     libnewlib-arm-none-eabi \
     unzip && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Nordic SDK
 RUN cd /opt && \
@@ -22,7 +24,7 @@ RUN cd /opt && \
     rm nRF5_SDK_11.0.0_89a8197.zip && \
     sed -i 's|/local/gcc-arm-none-eabi-4_9-2015q1||g' /opt/nRF5_SDK_11.0.0_89a8197/components/toolchain/gcc/Makefile.posix
 
-# Install nrfutil
+# Install pc-nrfutil
 RUN cd /opt && \
     git clone https://github.com/NordicSemiconductor/pc-nrfutil.git && \
     cd pc-nrfutil && \
@@ -55,7 +57,7 @@ gcc-arm-none-eabi \
 libnewlib-arm-none-eabi \
 unzip
 
-# Remove nRF5_SDK
+# Remove Nordic SDK
 RUN cd /opt && rm -rf nRF5_SDK_11.0.0_89a8197
 
 # Remove pc-nrfutil
