@@ -1,6 +1,3 @@
-*.zip
-.vscode
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -91,9 +88,3 @@ ENV/
 
 # Rope project settings
 .ropeproject
-
-# Extras
-.vscode
-*.zip
-_build
-manifest.json

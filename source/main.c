@@ -28,8 +28,9 @@
 #include "ble_dfu.h"
 #include "dfu_app_handler.h"
 #include "nrf_delay.h"
-#include "resin_status_service.h"
 #include "SEGGER_RTT.h"
+
+#define APP_ID                          "1234567890"                                /**< Name of device. Will be included in the advertising data. */
 
 #define RTT_PRINTF(...) \
 do { \
@@ -43,7 +44,6 @@ do { \
 #define CENTRAL_LINK_COUNT              0                                           /**< Number of central links used by the application. When changing this number remember to adjust the RAM settings*/
 #define PERIPHERAL_LINK_COUNT           1                                           /**< Number of peripheral links used by the application. When changing this number remember to adjust the RAM settings*/
 
-#define DEVICE_NAME                     "15390"                                     /**< Name of device. Will be included in the advertising data. */
 #define APP_ADV_INTERVAL                300                                         /**< The advertising interval (in units of 0.625 ms. This value corresponds to 25 ms). */
 #define APP_ADV_TIMEOUT_IN_SECONDS      0                                           /**< The advertising timeout in units of seconds. */
 
@@ -80,8 +80,6 @@ STATIC_ASSERT(IS_SRVC_CHANGED_CHARACT_PRESENT);                                 
 static dm_application_instance_t        m_app_handle;                               /**< Application identifier allocated by device manager */
 static ble_dfu_t                        m_dfus;                                     /**< Structure used to identify the DFU service. */
 static uint16_t                         m_conn_handle = BLE_CONN_HANDLE_INVALID;    /**< Handle of the current connection. */
-
-ble_os_t                                m_resin_status_service;                     /**< Resin status service structure */
 
 // YOUR_JOB: Use UUIDs for service(s) used in your application.
 static ble_uuid_t m_adv_uuids[] = {{BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE}}; /**< Universally unique service identifiers. */
@@ -137,8 +135,8 @@ static void gap_params_init(void)
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
 
     err_code = sd_ble_gap_device_name_set(&sec_mode,
-                                          (const uint8_t *)DEVICE_NAME,
-                                          strlen(DEVICE_NAME));
+                                          (const uint8_t *)APP_ID,
+                                          strlen(APP_ID));
     APP_ERROR_CHECK(err_code);
 
     /* YOUR_JOB: Use an appearance value matching the application's use case.
@@ -269,9 +267,6 @@ static void services_init(void)
 
     dfu_app_reset_prepare_set(reset_prepare);
     dfu_app_dm_appl_instance_set(m_app_handle);
-
-    // Initialise the resin status service
-    resin_status_service_init(&m_resin_status_service);
 }
 
 /**@brief Function for handling the Connection Parameters Module.
@@ -420,7 +415,6 @@ static void ble_evt_dispatch(ble_evt_t * p_ble_evt)
     on_ble_evt(p_ble_evt);
     ble_advertising_on_ble_evt(p_ble_evt);
     ble_dfu_on_ble_evt(&m_dfus, p_ble_evt);
-    resin_status_service_on_ble_evt(&m_resin_status_service, p_ble_evt);
 }
 
 /**@brief Function for dispatching a system event to interested modules.
