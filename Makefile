@@ -57,15 +57,14 @@ $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/drivers_nrf/uart/nrf_drv_uart.
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/drivers_nrf/pstorage/pstorage.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/examples/bsp/bsp.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/examples/bsp/bsp_btn_ble.c) \
-$(abspath src/main.c) \
-$(abspath src/resin_status_service.c) \
+$(abspath source/main.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/common/ble_advdata.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/ble_advertising/ble_advertising.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/common/ble_conn_params.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/common/ble_srv_common.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/device_manager/device_manager_peripheral.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/toolchain/system_nrf51.c) \
-$(abspath src/libs/softdevice_handler.c) \
+$(abspath source/libs/softdevice_handler.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/libraries/bootloader_dfu/bootloader_util.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/libraries/bootloader_dfu/dfu_app_handler.c) \
 $(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/ble_services/ble_dfu/ble_dfu.c) \
@@ -108,7 +107,7 @@ INC_PATHS += -I$(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/device_mana
 INC_PATHS += -I$(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/libraries/bootloader_dfu)
 INC_PATHS += -I$(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/ble_services/ble_dfu)
 INC_PATHS += -I$(abspath /opt/nRF5_SDK_11.0.0_89a8197/components/ble/ble_services/ble_dfu)
-INC_PATHS += -I$(abspath src/libs)
+INC_PATHS += -I$(abspath source/libs)
 
 OBJECT_DIRECTORY = _build
 LISTING_DIRECTORY = $(OBJECT_DIRECTORY)
@@ -217,7 +216,7 @@ $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).hex: $(OUTPUT_BINARY_DIRECTORY)/$(
 	@echo Preparing: $(OUTPUT_FILENAME).hex
 	$(NO_ECHO)$(OBJCOPY) -O ihex $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).hex
 
-finalize: genbin genhex echosize genzip clean
+finalize: genbin genhex echosize
 
 genbin:
 	@echo Preparing: $(OUTPUT_FILENAME).bin
@@ -230,10 +229,6 @@ genhex:
 echosize:
 	@echo 'Size:'
 	$(NO_ECHO)$(SIZE) $(OUTPUT_BINARY_DIRECTORY)/$(OUTPUT_FILENAME).out
-
-genzip:
-	@echo Generating application.zip
-	nrfutil dfu genpkg --application _build/nrf51422_xxac_s130.bin  application.zip
 
 clean:
 	$(RM) $(BUILD_DIRECTORIES)

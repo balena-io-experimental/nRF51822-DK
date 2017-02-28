@@ -15,5 +15,4 @@ COPY config/ ./config
 COPY source/ ./source
 
 # Compile the firmware
-RUN make && \
-	nrfutil dfu genpkg --application _build/nrf51422_xxac_s130.hex /assets/application.zip
+CMD make && mv _build/nrf51422_xxac_s130.hex /out/application.hex

@@ -1,44 +1,20 @@
 # nRF51822-DK
 edge-node-manager compatible firmware for the nRF51822-DK
 
-### Modify firmware
- - Change [line 46](https://github.com/resin-io-projects/nRF51822-DK/blob/master/src/main.c#L46) in `src/main.c` to point to your dependent application UUID
-
-### Prepare nRF51822-DK
- - Ensure you have the dependencies listed in the `Dockerfile`
- - Connect the nRF51922-DK to your computer using the USB cable
- - Prepare the board `$ sudo ./scripts/prepare.sh`
-
-### Compile firmware
- - Ensure you have the dependencies listed in the `Dockerfile`
- - Compile the firmware `$ make`
-
-### Flash firmware
- - Compile the firmware
- - Connect the nRF51822-DK to your computer using the USB cable
- - Enable bluetooth `$ hciconfig hci0 up`
- - Get the board address `$ hcitool lescan`
- - Find the board address where the name is `DfuTarg` e.g. `EE:50:F0:F8:3C:00 DfuTarg`
- - Flash firmware `$ python2 scripts/update.py -a EE:50:F0:F8:3C:00 -z application.zip`
- - Warn: You must use python2.7
- - Note: If the process times out or hangs please try to run the script again, the OTA update will continue from where it left off
-
 ### Getting started
- - Note: Take a look at the [edge-node-manager](https://github.com/resin-io/edge-node-manager) if you havn't already done so
- - Create a new dependent application called `nRF51822DK` from the `Dependent Applications` tab accessed from the side bar
- - Add the dependent application `resin remote` to your local workspace using the useful shortcut in the dashboard UI, for example:
-```
-$ git remote add resin gh_josephroberts@git.resinstaging.io:gh_josephroberts/nrf51822DK.git
-```
- - Retrive the dependent application `UUID` from the Resin dashboard, for example: If your dependent application URL is
- `https://dashboard.resinstaging.io/apps/13829/devices` the `UUID` is `14495`
- - Set the dependent application `UUID` on [line 82](https://github.com/resin-io/edge-node-manager/blob/master/application/application.go#L82)
-  in `application/application.go` to point to your dependent application, for example: `initApplication(14495, board.NRF51822DK)`
- - Make sure you add, commit and push the change to the edge-node-manager application
- - Add, commit and push the `nRF51822DK` application to your RPi3, for example:
-```
-$ git add src/main.c
-$ git commit -m "Set the application UUID"
-$ git push resin master
-```
- - Turn on your nRF51822-DK dependent device within range of the RPi3 gateway device and watch it appear on the Resin dashboard!
+ - Ensure you have [Docker](https://www.docker.com/) installed on your local machine and the daemon is running
+ - Ensure you have the [nRF5x command line tools](https://infocenter.nordicsemi.com/topic/com.nordic.infocenter.tools/dita/tools/nrf5x_command_line_tools/nrf5x_installation.html) installed and in your path
+ - Sign up on [resin.io](https://dashboard.resin.io/signup)
+ - Work through the [getting started guide](https://docs.resin.io/raspberrypi3/nodejs/getting-started/)
+ - Create a dependent application called `nrf51822dk`
+ - Set these variables in the `Fleet Configuration` dependent application side tab
+    - `RESIN_SUPERVISOR_DELTA=1`
+    - `RESIN_HOST_TYPE=nrf51822dk`
+ - Clone this repository to your local workspace
+ - Add the dependent application `resin remote` to your local workspace
+ - Retrieve the dependent application ID from the Resin dashboard, for example: If your dependent application URL is
+ `https://dashboard.staging.io/apps/13829/devices` the ID is `14495`
+ - Change [line 33](https://github.com/resin-io-projects/nRF51822-DK/blob/master/source/main.c#L33) in `source/main.c` `#define APP_ID "1234567890"` to point to your dependent application ID e.g. `#define APP_ID "14495"`
+ - Connect the nRF51822-DK to your computer using a USB cable
+ - Run the provisioning script `$ ./provision.sh`, this will generate the initial firmware and flash the nRF51822-DK
+ - Push code to resin as normal :)
